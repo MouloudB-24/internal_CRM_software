@@ -12,7 +12,7 @@ class Customer(Base):
     __tablename__ = "customers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    sales_contact_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sales_contract_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     full_name = Column(String(100), nullable=False)
     email = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=False)
@@ -21,5 +21,5 @@ class Customer(Base):
 
 
     # Relationships
-    sales_contact = relationship("User", back_populates="managed_customers")
+    sales_contract = relationship("User", back_populates="managed_customers")
     contracts = relationship("Contrat", back_populates="customer")
