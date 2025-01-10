@@ -24,7 +24,7 @@ class Contract(Base):
     sales_contact_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     status = Column(Enum(ContractStatus), nullable=False, default=ContractStatus.DRAFT)
     total_amount = Column(Float, nullable=False)
-    remaining_amout = Column(Float, nullable=False)
+    remaining_amount = Column(Float, nullable=False)
     create_at = Column(Datetime, default=datetime.now())
     update_at = Column(Datetime, default=datetime.now(), onupdate=datetime.now())
 
