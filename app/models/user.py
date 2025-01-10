@@ -30,4 +30,4 @@ class User(Base):
     # Relationships
     managed_customers = relationship("Customer", back_populates="sales_contact")
     managed_contracts = relationship("Contrat", back_populates="sales_contact")
-    events = relationship("Event", back_populates="support_contact")
+    supported_events = relationship("Event", back_populates="support_contact")
