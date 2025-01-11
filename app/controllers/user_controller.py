@@ -30,3 +30,22 @@ def register_user():
     db.session.commit()
 
     return jsonify({"message": "User registered successfully👏"})
+
+
+@user_dp.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"error": "Missing email or password"})
+
+    # vérifier si un user existe
+    user = User.query.filter_by(email=email).first()
+    if not user or user.check_password(password):
+        return jsonify({"error": "Invalid credentials"})
+
+    # Générer un jeton JWT
+    token = user.generate_token()
+    return jsonify({"token": token}), 200
