@@ -1,13 +1,10 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Datetime, ForeignKey, Enum, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from app import db
 
-Base = declarative_base()
 
-# Enum contract
+# Define a Status class
 class ContractStatus(enum.Enum):
     DRAFT = "Draft"
     PENDING = "Pending"
@@ -15,21 +12,21 @@ class ContractStatus(enum.Enum):
     COMPLETED = "Completed"
 
 
-# Contrat model
-class Contract(Base):
+# Define Contract model
+class Contract(db.Model):
     __tablename__ = "contracts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
-    sales_contact_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    status = Column(Enum(ContractStatus), nullable=False, default=ContractStatus.DRAFT)
-    total_amount = Column(Float, nullable=False)
-    remaining_amount = Column(Float, nullable=False)
-    create_at = Column(Datetime, default=datetime.now())
-    update_at = Column(Datetime, default=datetime.now(), onupdate=datetime.now())
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    sales_contact_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    status = db.Column(db.Enum(ContractStatus), nullable=False, default=ContractStatus.DRAFT)
+    total_amount = db.Column(db.Float, nullable=False)
+    remaining_amount = db.Column(db.Float, nullable=False)
+    create_at = db.Column(db.DateTime, default=datetime.now())
+    update_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
 
     # Relationships
-    customer = relationship("Customer", back_populates="contracts")
-    sales_contact = relationship("User", back_populates="managed_contracts")
-    events = relationship("Event", back_populates="contract")
+    customer = db.relationship("Customer", back_populates="contracts")
+    sales_contact = db.relationship("User", back_populates="managed_contracts")
+    events = db.relationship("Event", back_populates="contract")
 
