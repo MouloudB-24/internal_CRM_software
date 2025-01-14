@@ -7,14 +7,14 @@ from sqlalchemy.orm import relationship
 from app import db
 
 
-# Enum event
+# Define Status class
 class EventStatus(enum.Enum):
     PLANNED = "Planned"
     IN_PROGRESS = "In progress"
     COMPLETED = "Completed"
 
 
-# Even class
+# Define Event model
 class Event(db.Model):
     __tablename__ = "events"
 
