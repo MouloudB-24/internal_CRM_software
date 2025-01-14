@@ -1,11 +1,11 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Datetime, ForeignKey, Enum, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Integer, DateTime, ForeignKey, Enum, String
 from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+from app import db
+
 
 # Enum event
 class EventStatus(enum.Enum):
@@ -15,21 +15,21 @@ class EventStatus(enum.Enum):
 
 
 # Even class
-class Event(Base):
+class Event(db.Model):
     __tablename__ = "events"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    contract_id = Column(Integer, ForeignKey("contracts.id"))
-    support_contact_id = Column(Integer, ForeignKey("users.id"))
-    name = Column(String(100), nullable=False)
-    status = Column(Enum(EventStatus), default=EventStatus.PLANNED)
-    start_date = Column(Datetime, nullable=False)
-    end_date = Column(Datetime, nullable=False)
-    location = Column(String(150), nullable=False)
-    attendees = Column(Integer)
-    notes = Column(String(1000))
-    create_at = Column(Datetime, default=datetime.now())
-    update_at = Column(Datetime, default=datetime.now(), onupdate=datetime.now())
+    id = db.Column(Integer, primary_key=True, autoincrement=True)
+    contract_id = db.Column(Integer, ForeignKey("contracts.id"))
+    support_contact_id = db.Column(Integer, ForeignKey("users.id"))
+    name = db.Column(String(100), nullable=False)
+    status = db.Column(Enum(EventStatus), default=EventStatus.PLANNED)
+    start_date = db.Column(DateTime, nullable=False)
+    end_date = db.Column(DateTime, nullable=False)
+    location = db.Column(String(150), nullable=False)
+    attendees = db.Column(Integer)
+    notes = db.Column(String(1000))
+    create_at = db.Column(DateTime, default=datetime.now())
+    update_at = db.Column(DateTime, default=datetime.now(), onupdate=datetime.now())
 
 
     # Relations
