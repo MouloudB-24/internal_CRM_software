@@ -40,7 +40,7 @@ def create_contract() -> Union[Response, Tuple[Response, int]]:
         total_amount=total_amount,
         remaining_amount=remaining_amount)
 
-    # # Add the new contract in the database
+    # Add the new contract in the database
     db.session.add(contract)
     db.session.commit()
 
