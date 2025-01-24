@@ -1,15 +1,50 @@
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
+from werkzeug.security import check_password_hash
 
 from app import create_app, db
+from app.models.contract import Contract, ContractStatus
 from app.models.customer import Customer
-from app.models.contract import Contract
+from app.models.event import Event
 from app.models.user import User, UserRole
 
 console = Console()
 app = create_app()
 
+
+# -------------------------------------- LOGIN and PERMISSIONS ---------------------------------------------
+# Variable for logged-in user
+current_user = None
+
+def login_user():
+    """User login"""
+
+    global current_user
+    console.print("\n[bold cyan]User login")
+
+    email = Prompt.ask("[bold yellow]Email")
+    password = Prompt.ask("[bold yellow]Password", password=True)
+
+    with app.app_context():
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            current_user = user
+            console.print(f"[bold green]Successfully connection! Welcome, {user.username}.[/bold green]")
+        else:
+            console.print("[bold red]Invalid credentials. Please again!")
+            login_user()
+
+def has_permission(required_role):
+    """Check whether the logged-in user has the required role."""
+
+    if current_user.role == UserRole.MANAGEMENT:
+        return True
+    return current_user.role == required_role
+
+
+
+# -------------------------------------- Main MENU ----------------------------------------------
 def main_menu():
     """Application main menu"""
 
@@ -19,9 +54,9 @@ def main_menu():
         console.print("2 - Manage costumers")
         console.print("3 - Manage contracts")
         console.print("4 - Manage events")
-        console.print("5 - Exit")
+        console.print("q - Exit")
 
-        choice = Prompt.ask("[bold purple]Enter your choice", choices=["1", "2", "3", "4", "5"])
+        choice = Prompt.ask("[bold purple]Enter your choice", choices=["1", "2", "3", "4", "q"])
 
         if choice == "1":
             user_menu()
@@ -31,10 +66,13 @@ def main_menu():
             contract_menu()
         elif choice == "4":
             event_menu()
-        elif choice == "5":
+        elif choice == "q":
             console.print("[bold red]Good-bye!")
             break
 
+
+
+# -------------------------------------- Manager USERS ----------------------------------------------
 def user_menu():
     """User management menu"""
 
@@ -42,19 +80,23 @@ def user_menu():
         console.print("\n[bold green]Manage users")
         console.print("1 - Create user")
         console.print("2 - Show users")
-        console.print("3 - Back to main menu")
+        console.print("q - Back to main menu")
 
-        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3"])
+        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "q"])
 
         if choice == "1":
             create_user()
         elif choice == "2":
             list_users()
-        elif choice == "3":
+        elif choice == "q":
             break
 
 def create_user():
     """Create a new user"""
+
+    if not has_permission(UserRole.MANAGEMENT):
+        console.print("[bold red]Permission denied : Only managers can create users.")
+        return
 
     console.print("\n[bold yellow]Create a new user[/bold yellow]")
 
@@ -108,7 +150,7 @@ def list_users():
 
 
 
-
+# -------------------------------------- Manager COSTUMERS ----------------------------------------------
 def costumer_menu():
     """Costumers management menu"""
 
@@ -116,20 +158,30 @@ def costumer_menu():
         console.print("\n[bold green]Manage costumers[/bold green]")
         console.print("[bold yellow]1 - Create costumer")
         console.print("[bold yellow]2 - Show all costumers")
-        console.print("[bold yellow]3 - Back to main menu")
+        console.print("[bold yellow]3 - Update costumer")
+        console.print("[bold yellow]4 - Delete costumer")
+        console.print("[bold yellow]q - Back to main menu")
 
-        choice = Prompt.ask("[bold green]Enter your choice[/bold green]", choices=["1", "2", "3"])
+        choice = Prompt.ask("[bold green]Enter your choice[/bold green]", choices=["1", "2", "3", "4", "q"])
 
         if choice == "1":
             create_costumer()
         elif choice == "2":
             list_costumers()
         elif choice == "3":
+            update_costumer()
+        elif choice == "4":
+            delete_customer()
+        elif choice == "q":
             break
 
 
 def create_costumer():
     """Create a new costumer"""
+
+    if not has_permission(UserRole.SALES):
+        console.print("[bold red]Permission denied : only sales and managers can create costumers.")
+        return
 
     console.print("\n[bold yellow]Create a new costumer")
 
@@ -189,26 +241,97 @@ def list_costumers():
 
         console.print(table)
 
+def update_costumer():
+    """Update customer"""
 
+    if not has_permission(UserRole.SALES):
+        console.print("[bold red]Permission denied : only sales and managers can create costumers.")
+        return
+
+    console.print("\n[bold yellow]Costumer update")
+
+    customer_id = Prompt.ask("[bold yellow]Customer ID to be updated")
+
+    with app.app_context():
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            console.print("[bold red]Costumer not found!")
+            return
+
+        # Request new values
+        full_name = Prompt.ask("[bold yellow]Full name[/bold yellow]", default=customer.full_name)
+        email = Prompt.ask("[bold yellow]Email", default=customer.email)
+        phone = Prompt.ask("[bold yellow]Phone", default=customer.phone)
+        company_name = Prompt.ask("[bold yellow]Company name", default=customer.company_name)
+
+        try:
+            customer.full_name = full_name
+            customer.email = email
+            customer.phone = phone
+            customer.company_name = company_name
+            db.session.commit()
+            console.print("[bold green]Customer successfully updated!")
+        except Exception as e:
+            console.print(f"[bold red]Updated error: {str(e)}[/bold red]")
+
+
+def delete_customer():
+    """Delete costumer"""
+
+    if not has_permission(UserRole.MANAGEMENT):
+        console.print("[bold red]Permission denied : Only managers can create users.")
+        return
+
+    console.print("\n[bold yellow]Deleting a constumer")
+
+    customer_id = Prompt.ask("[bold yellow]Costumer ID to be deleted")
+
+    with app.app_context():
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            console.print("[bold red]Costumer not found!")
+            return
+
+        try:
+            db.session.delete(customer)
+            db.session.commit()
+            console.print("[bold green]Costumer successfully deleted")
+        except Exception as e:
+            console.print(f"[bold red]Deleted error: {str(e)}[/bold red]")
+
+
+
+# -------------------------------------- Manager CONTRACTS ----------------------------------------------
 def contract_menu():
     """Manage contracts"""
     while True:
         console.print("\n[bold cyan]Manage contracts")
         console.print("1 - Create contract")
         console.print("2 - Show contracts")
-        console.print("3. back to main menu")
+        console.print("3 - Update contract")
+        console.print("4 - Delete contract")
+        console.print("q. back to main menu")
 
-        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3"])
+        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3", "4", "q"])
 
         if choice == "1":
             create_contract()
         elif choice == "2":
             list_contracts()
         elif choice == "3":
+            update_contract()
+        elif choice == "4":
+            delete_contract()
+        elif choice == "q":
             break
 
 def create_contract():
     """Create a new contract"""
+
+    if not has_permission(UserRole.SALES):
+        console.print("[bold red]Permission denied : only sales and managers can create contracts.")
+        return
+
 
     console.print("\n[bold yellow]Create a new contract")
 
@@ -265,29 +388,101 @@ def list_contracts():
 
         console.print(table)
 
+def update_contract():
+    """Update contract"""
 
+    if not has_permission(UserRole.SALES):
+        console.print("[bold red]Permission denied : only sales and managers can update contracts.")
+        return
+
+    console.print("\n[bold yellow]Updating a contract")
+
+    contract_id = Prompt.ask("[bold yellow]ID of the contract to update")
+
+    with app.app_context():
+        contract = db.session.get(Contract, contract_id)
+        if not contract:
+            console.print("[bold red]Contract not found!")
+            return
+
+        # Prompt for new values (leave blank to keep current values)
+        customer_id = Prompt.ask("[bold yellow]Customer ID", default=str(contract.customer_id))
+        sales_contact_id = Prompt.ask("[bold yellow]Sales contact ID", default=str(contract.sales_contact_id))
+        total_amount = Prompt.ask("[bold yellow]Total amount", default=str(contract.total_amount))
+        remaining_amount = Prompt.ask("[bold yellow]Remaining amount", default=str(contract.remaining_amount))
+        status = Prompt.ask("[bold yellow]Status (Draft, Pending, Signed, Completed)", default=contract.status)
+
+        try:
+            # Update the contract
+            contract.customer_id = int(customer_id)
+            contract.sales_contact_id = int(sales_contact_id)
+            contract.total_amount = float(total_amount)
+            contract.remaining_amount = float(remaining_amount)
+            contract.status = status
+            db.session.commit()
+            console.print("[bold green]Contract updated successfully!")
+        except Exception as e:
+            console.print(f"[bold red]Error updating the contract: {str(e)}[/bold red]")
+
+
+def delete_contract():
+    """Delete contract"""
+
+    if not has_permission(UserRole.MANAGEMENT):
+        console.print("[bold red]Permission denied : only managers can delete contracts.")
+        return
+
+    console.print("\n[bold yellow]Deleting a contract")
+
+    contract_id = Prompt.ask("[bold yellow]ID of the contract to delete")
+
+    with app.app_context():
+        contract = db.session.get(Contract, contract_id)
+        if not contract:
+            console.print("[bold red]Contract not found!")
+            return
+
+        try:
+            # Delete the contract
+            db.session.delete(contract)
+            db.session.commit()
+            console.print("[bold green]Contract deleted successfully!")
+        except Exception as e:
+            console.print(f"[bold red]Error deleting the contract: {str(e)}[/bold red]")
+
+
+
+# -------------------------------------- Manager EVENTS ----------------------------------------------
 def event_menu():
     """Event management menu"""
     while True:
         console.print("\n[bold cyan]Manage events")
         console.print("1 - Create event")
         console.print("2 - Show events")
-        console.print("3 - Back to main menu")
+        console.print("3 - Update event")
+        console.print("4 - Delete event")
+        console.print("q - Back to main menu")
 
-        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3"])
+        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3", "4", "q"])
 
         if choice == "1":
             create_event()
         elif choice == "2":
             list_events()
         elif choice == "3":
+            update_event()
+        elif choice == "4":
+            delete_event()
+        elif choice == "q":
             break
 
 
-from app.models.event import Event
-
 def create_event():
     """Create a new event"""
+
+    if not has_permission(UserRole.SUPPORT):
+        console.print("[bold red]Permission denied : only supports and managers can create events.")
+        return
 
     console.print("\n[bold yellow]Create a new event")
 
@@ -359,7 +554,77 @@ def list_events():
 
         console.print(table)
 
+def update_event():
+    """Update event"""
+
+    if not has_permission(UserRole.SUPPORT):
+        console.print("[bold red]Permission denied : only supports and managers can update events.")
+        return
+
+    console.print("\n[bold yellow]Updating an event")
+
+    event_id = Prompt.ask("[bold yellow]ID of the event to update")
+
+    with app.app_context():
+        event = db.session.get(Event, event_id)
+        if not event:
+            console.print("[bold red]Event not found!")
+            return
+
+        # Prompt for new values
+        contract_id = Prompt.ask("[bold yellow]Contract ID", default=str(event.contract_id))
+        support_contact_id = Prompt.ask("[bold yellow]Support Contact ID", default=str(event.support_contact_id) if event.support_contact_id else "None")
+        name = Prompt.ask("[bold yellow]Event Name", default=event.name)
+        status = Prompt.ask("[bold yellow]Status (Planned, In_progress, Completed)", default=event.status)
+        start_date = Prompt.ask("[bold yellow]Start Date (YYYY-MM-DD)", default=event.start_date.strftime("%Y-%m-%d"))
+        end_date = Prompt.ask("[bold yellow]End Date (YYYY-MM-DD)", default=event.end_date.strftime("%Y-%m-%d"))
+        location = Prompt.ask("[bold yellow]Location", default=event.location)
+        attendees = Prompt.ask("[bold yellow]Number of Attendees", default=str(event.attendees))
+        notes = Prompt.ask("[bold yellow]Notes", default=event.notes if event.notes else "")
+
+        try:
+            # Update the event
+            event.contract_id = int(contract_id)
+            event.support_contact_id = int(support_contact_id) if support_contact_id.lower() != "none" else None
+            event.name = name
+            event.status = status
+            event.start_date = start_date
+            event.end_date = end_date
+            event.location = location
+            event.attendees = int(attendees)
+            event.notes = notes
+            db.session.commit()
+            console.print("[bold green]Event updated successfully!")
+        except Exception as e:
+            console.print(f"[bold red]Error updating the event: {str(e)}[/bold red]")
+
+
+def delete_event():
+    """Delete event"""
+
+    if not has_permission(UserRole.MANAGEMENT):
+        console.print("[bold red]Permission denied : only managers can delete events.")
+        return
+
+    console.print("\n[bold yellow]Deleting an event")
+
+    event_id = Prompt.ask("[bold yellow]ID of the event to delete")
+
+    with app.app_context():
+        event = db.session.get(Event, event_id)
+        if not event:
+            console.print("[bold red]Event not found!")
+            return
+
+        try:
+            # Delete the event
+            db.session.delete(event)
+            db.session.commit()
+            console.print("[bold green]Event deleted successfully!")
+        except Exception as e:
+            console.print(f"[bold red]Error deleting the event: {str(e)}[/bold red]")
 
 
 if __name__ == '__main__':
+    login_user()
     main_menu()
