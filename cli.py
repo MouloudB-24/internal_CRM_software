@@ -133,5 +133,5 @@ def event_menu():
 
 
 if __name__ == '__main__':
-    login_user()
+    #login_user()
     main_menu()
