@@ -2,6 +2,7 @@ import enum
 from datetime import datetime
 
 from app import db
+from app.models.event import Event
 
 
 # Define a Status class
