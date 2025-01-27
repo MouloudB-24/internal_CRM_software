@@ -6,6 +6,7 @@ from app import db, create_app
 from app.models.event import Event
 from app.models.user import UserRole
 from app.auth import has_permission
+from app.utils.validators import validate_date
 
 console = Console()
 app = create_app()
@@ -24,8 +25,19 @@ def create_event():
     support_contact_id = Prompt.ask("[bold yellow]Support contact ID", default="None")
     name = Prompt.ask("[bold yellow]Event name")
     status = Prompt.ask("[bold yellow]Event status", choices=["Planned", "In_progress", "Completed"])
-    start_date = Prompt.ask("[bold yellow]Start date (YYYY-MM-DD)")
-    end_date = Prompt.ask("[bold yellow]End date (YYYY-MM-DD)")
+
+    while True:
+        start_date = Prompt.ask("[bold yellow]Start date (YYYY-MM-DD)")
+        if validate_date(start_date):
+            break
+        console.print("[red]Invalid date format. Please use YYYY-MM-DD.[/red]")
+
+    while True:
+        end_date = Prompt.ask("[bold yellow]End date (YYYY-MM-DD)")
+        if validate_date(end_date):
+            break
+        console.print("[red]Invalid date format. Please use YYYY-MM-DD.[/red]")
+
     location = Prompt.ask("[bold yellow]Event location")
     attendees = Prompt.ask("[bold yellow]Number of attendees", default="0")
     notes = Prompt.ask("[bold yellow]Notes (optional)", default="")
@@ -46,6 +58,7 @@ def create_event():
             db.session.add(event)
             db.session.commit()
             console.print("[bold green]Event successfully created!")
+
         except Exception as e:
             console.print(f"[bold red]Event creation error: {str(e)}[/bold red]")
 

@@ -6,7 +6,6 @@ from flask import current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
-from app.models.customer import Customer
 
 
 # Define a role class

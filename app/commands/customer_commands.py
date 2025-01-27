@@ -6,6 +6,7 @@ from app import db, create_app
 from app.auth import has_permission
 from app.models.customer import Customer
 from app.models.user import UserRole
+from app.utils.validators import validate_phone
 
 console = Console()
 app = create_app()
@@ -22,7 +23,13 @@ def create_costumer():
 
     full_name = Prompt.ask("[bold yellow]Full name")
     email = Prompt.ask("[bold yellow]Email")
-    phone = Prompt.ask("[bold yellow]Phone")
+
+    while True:
+        phone = Prompt.ask("[bold yellow]Phone")
+        if validate_phone(phone):
+            break
+        console.print("[red]Invalid phone number. It must contain only digits and be 10 to 15 characters long.[/red]")
+
     company_name = Prompt.ask("[bold yellow]Company name", default="N/A")
     sales_contact_id = Prompt.ask("[bold yellow]Associated sales contact ID")
 
@@ -114,10 +121,10 @@ def delete_customer():
     """Delete costumer"""
 
     if not has_permission(UserRole.MANAGEMENT):
-        console.print("[bold red]Permission denied : Only managers can create users.")
+        console.print("[bold red]Permission denied : Only managers can delete users.")
         return
 
-    console.print("\n[bold yellow]Deleting a constumer")
+    console.print("\n[bold yellow]Deleting a customer")
 
     customer_id = Prompt.ask("[bold yellow]Costumer ID to be deleted")
 

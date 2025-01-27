@@ -5,7 +5,7 @@ from app.auth import login_user
 from app.commands.contract_commands import create_contract, list_contracts, update_contract, delete_contract
 from app.commands.customer_commands import create_costumer, list_costumers, update_costumer, delete_customer
 from app.commands.event_commands import create_event, list_events, update_event, delete_event
-from app.commands.user_commands import create_user, list_users
+from app.commands.user_commands import create_user, list_users, delete_user
 
 console = Console()
 
@@ -44,14 +44,17 @@ def user_menu():
         console.print("\n[bold green]Manage users")
         console.print("1 - Create user")
         console.print("2 - Show users")
+        console.print("3 - Delete user")
         console.print("q - Back to main menu")
 
-        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "q"])
+        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3", "q"])
 
         if choice == "1":
             create_user()
         elif choice == "2":
             list_users()
+        elif choice=="3":
+            delete_user()
         elif choice == "q":
             break
 
@@ -133,5 +136,5 @@ def event_menu():
 
 
 if __name__ == '__main__':
-    #login_user()
+    login_user()
     main_menu()
