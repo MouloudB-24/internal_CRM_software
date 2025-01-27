@@ -28,6 +28,12 @@ def create_app():
     app = Flask(__name__)
     app.json.sort_keys = False
 
+    # Import all models
+    from app.models.user import User
+    from app.models.customer import Customer
+    from app.models.contract import Contract
+    from app.models.event import Event
+
     # Configure database
     app.config['SQLALCHEMY_DATABASE_URI'] =  os.getenv('SQLALCHEMY_DATABASE_URI')
     app.config["SECRET_KEY"] = os.getenv('SECRET_KEY')
