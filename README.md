@@ -35,10 +35,15 @@ A CLI-based Customer Relationship Management (CRM) application designed to manag
 5. Initialize the database and create initial tables
     ```bash
    flask db init
-   flask db upgrade
+   flask db migrate -m "Create intial tables"
    flask db upgrade
 
 ## Start application
+1. create an application administrator
+   ```bash
+    python create_administrator.py
+   
+2. Start the application's command line interface
 ```bash
     python cli.py
 
