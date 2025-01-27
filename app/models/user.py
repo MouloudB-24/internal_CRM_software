@@ -1,9 +1,7 @@
 import enum
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import jwt
-from flask import current_app
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 
 from app import db
 
@@ -34,37 +32,7 @@ class User(db.Model):
     managed_contracts = db.relationship("Contract", back_populates="sales_contact")
     supported_events = db.relationship("Event", back_populates="support_contact")
 
-
-    def __repr__(self):
-        return f"User {self.username}"
-
     def set_password(self, password):
         """Hash password"""
         self.password = generate_password_hash(password)
 
-
-    def check_password(self, password):
-        """Check hashed password"""
-        return check_password_hash(self.password, password)
-
-
-    def generate_token(self, expiration=10800):
-        """Gererate a JWT for user with an expiration date"""
-
-        payload = {"user_id": self.id, "exp": datetime.now() + timedelta(seconds=expiration)}
-
-        token = jwt.encode(payload, key=current_app.config["SECRET_KEY"], algorithm="HS256")
-        return token
-
-    @staticmethod
-    def verify_token(token):
-        """Check a JWT and returns the user ID if valid"""
-
-        try:
-            payload = jwt.decode(token, key=current_app.config["SECRET_KEY"], algorithms=["HS256"])
-            return payload['user_id']
-
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
-            return None
