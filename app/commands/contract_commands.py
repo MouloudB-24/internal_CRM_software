@@ -1,11 +1,13 @@
+import sentry_sdk
+from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
-from rich.console import Console
+from sentry_sdk import capture_message
 
 from app import db, create_app
+from app.auth import has_permission
 from app.models.contract import Contract
 from app.models.user import UserRole
-from app.auth import has_permission
 
 console = Console()
 app = create_app()
@@ -72,6 +74,33 @@ def list_contracts():
             )
 
         console.print(table)
+
+
+def sign_contract():
+    """Sign a contract."""
+
+    try:
+        console.print("\n[bold yellow]Signing a contract")
+        contract_id = Prompt.ask("[bold yellow]Contract ID")
+
+        with app.app_context():
+            contract = db.session.get(Contract, contract_id)
+            if not contract:
+                console.print("[bold red]Contract not found!")
+                return
+
+            contract.status = "Signed"
+            db.session.commit()
+
+        console.print(f"[bold green]Contract {contract_id} signed successfully!")
+
+        # Log to Sentry
+        capture_message(f"Contract {contract_id} signed successfully.", level="info")
+
+    except Exception as e:
+        console.print(f"[bold red]Error: {e}[/bold red]")
+        sentry_sdk.capture_exception(e)
+
 
 def update_contract():
     """Update contract"""

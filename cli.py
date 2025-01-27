@@ -1,13 +1,25 @@
+import sentry_sdk
 from rich.console import Console
 from rich.prompt import Prompt
 
 from app.auth import login_user
-from app.commands.contract_commands import create_contract, list_contracts, update_contract, delete_contract
+from app.commands.contract_commands import create_contract, list_contracts, update_contract, delete_contract, \
+    sign_contract
 from app.commands.customer_commands import create_costumer, list_costumers, update_costumer, delete_customer
 from app.commands.event_commands import create_event, list_events, update_event, delete_event
 from app.commands.user_commands import create_user, list_users, delete_user
 
 console = Console()
+
+# -------------------------------------- CAPTURE UNEXPECTED ERRORS ------------------------------
+def execute_command_with_logging(command_function):
+    """Capture unexpected exceptions in Sentry."""
+    try:
+        command_function()
+    except Exception as e:
+        console.print(f"[bold red]An unexpected error occurred: {e}[/bold red]")
+        sentry_sdk.capture_exception(e)
+
 
 # -------------------------------------- Main MENU ----------------------------------------------
 def main_menu():
@@ -24,13 +36,13 @@ def main_menu():
         choice = Prompt.ask("[bold purple]Enter your choice", choices=["1", "2", "3", "4", "q"])
 
         if choice == "1":
-            user_menu()
+            execute_command_with_logging(user_menu)
         elif choice == "2":
-            costumer_menu()
+            execute_command_with_logging(costumer_menu)
         elif choice == "3":
-            contract_menu()
+            execute_command_with_logging(contract_menu)
         elif choice == "4":
-            event_menu()
+            execute_command_with_logging(event_menu)
         elif choice == "q":
             console.print("[bold red]Good-bye!")
             break
@@ -92,19 +104,22 @@ def contract_menu():
         console.print("\n[bold cyan]Manage contracts")
         console.print("1 - Create contract")
         console.print("2 - Show contracts")
-        console.print("3 - Update contract")
-        console.print("4 - Delete contract")
+        console.print("3 - Sign contract")
+        console.print("4 - Update contract")
+        console.print("5 - Delete contract")
         console.print("q. back to main menu")
 
-        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3", "4", "q"])
+        choice = Prompt.ask("[bold green]Enter your choice", choices=["1", "2", "3", "4", "5", "q"])
 
         if choice == "1":
             create_contract()
         elif choice == "2":
             list_contracts()
         elif choice == "3":
-            update_contract()
+            sign_contract()
         elif choice == "4":
+            update_contract()
+        elif choice == "5":
             delete_contract()
         elif choice == "q":
             break

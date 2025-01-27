@@ -1,15 +1,27 @@
 import os
 
+import sentry_sdk
 from flask import Flask
 from flask.cli import load_dotenv
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 # Load environment variables from .env file
 load_dotenv()
 
 db = SQLAlchemy()
 migrate = Migrate()
+
+
+# Initialize Sentry
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY_DSN'),
+    integrations=[LoggingIntegration()],
+    traces_sample_rate=1.0,
+    _experiments={"continuous_profiling_auto_start": True}
+)
+
 
 def create_app():
     # Initialize flask application

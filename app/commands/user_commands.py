@@ -1,6 +1,8 @@
+import sentry_sdk
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
+from sentry_sdk import capture_message
 
 from app import db, create_app
 from app.auth import has_permission
@@ -46,8 +48,13 @@ def create_user():
             db.session.commit()
 
             console.print("[bold green]User successfully created![/bold green]")
+
+            # Log to Sentry
+            capture_message(f"User '{username}' created successfully.", level="info")
+
         except Exception as e:
             console.print(f"[bold red]User creation error : {str(e)}[/bold red]")
+            sentry_sdk.capture_exception(e)
 
 def list_users():
     """Show all users"""
